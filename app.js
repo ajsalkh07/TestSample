@@ -4,7 +4,6 @@ const meetingRoutes = require("./routes/meeting.routes");
 
 const app = express();
 
-// ✅ FIX CORS (no npm needed)
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -13,7 +12,7 @@ app.use((req, res, next) => {
     else next();
 });
 
-// ✅ Serve static files (test.html)
+// Server static files (test.html)
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
