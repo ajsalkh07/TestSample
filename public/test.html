@@ -1,297 +1,95 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProjectZ</title>
+    <title>ProjectZ Test</title>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px;
-        }
-        .container { 
-            max-width: 900px; margin: 0 auto; 
-            background: white; border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1); padding: 30px;
-        }
-        h1 { color: #4a5568; text-align: center; margin-bottom: 10px; }
-        .user-info { 
-            text-align: center; color: #666; 
-            background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 30px;
-        }
-        .section { margin-bottom: 30px; padding: 20px; border-radius: 12px; background: #f8f9fa; }
-        .btn { 
-            padding: 12px 24px; border: none; border-radius: 8px; 
-            font-weight: 600; cursor: pointer; margin: 5px; transition: all 0.2s;
-        }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-success { background: #48bb78; color: white; }
-        .btn-warning { background: #ed8936; color: white; }
-        .btn-danger { background: #f56565; color: white; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        input { 
-            padding: 12px 16px; border: 2px solid #e2e8f0; 
-            border-radius: 8px; font-size: 16px; width: 300px; margin: 5px;
-        }
-        input:focus { outline: none; border-color: #667eea; }
-        .status { 
-            padding: 15px; margin: 15px 0; border-radius: 8px; font-weight: 500;
-            text-align: center;
-        }
-        .status.success { background: #c6f6d5; color: #22543d; border: 1px solid #9ae6b4; }
-        .status.error { background: #fed7d7; color: #742a2a; border: 1px solid #fc8181; }
-        .status.info { background: #bee3f8; color: #2a4365; border: 1px solid #90cdf4; }
-        #participants { 
-            background: white; min-height: 80px; padding: 20px; 
-            border-radius: 8px; border: 2px dashed #e2e8f0;
-        }
-        .participant { 
-            display: inline-block; background: #edf2f7; 
-            padding: 8px 16px; border-radius: 20px; margin: 5px; font-size: 14px;
-        }
-        .meeting-info { 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; padding: 20px; border-radius: 12px; margin: 20px 0;
-        }
-        #logs { 
-            background: #2d3748; color: #e2e8f0; 
-            height: 200px; overflow-y: auto; padding: 15px; 
-            border-radius: 8px; font-family: monospace; font-size: 13px; line-height: 1.5;
-            white-space: pre-wrap;
-        }
+        body { font-family: monospace; background: #222; color: #0f0; padding: 20px; }
+        #log { background: #000; padding: 15px; height: 400px; overflow: auto; font-size: 14px; }
+        button { padding: 10px 20px; margin: 5px; background: #0066cc; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0080ff; }
+        input { padding: 10px; margin: 5px; width: 250px; }
+        .status { color: #ff0; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧪 ProjectZ Meeting Test</h1>
-        <div class="user-info">
-            <strong>Your ID:</strong> <span id="userId">-</span> | 
-            <strong>Server:</strong> http://localhost:5000
-        </div>
-        
-        <div id="status"></div>
-
-        <div class="section">
-            <h3>🎬 Quick Actions</h3>
-            <button class="btn btn-primary" onclick="createMeeting()">Create Meeting</button>
-            <div style="display: inline-block; vertical-align: middle;">
-                <input type="text" id="meetingIdInput" placeholder="Paste Meeting ID here">
-                <button class="btn btn-success" onclick="joinMeeting()">Join</button>
-                <button class="btn btn-warning" onclick="leaveMeeting()">Leave</button>
-                <button class="btn btn-danger" onclick="endMeeting()">End Meeting</button>
-            </div>
-        </div>
-
-        <div id="meetingInfo" class="meeting-info" style="display: none;">
-            <h3>📊 Current Meeting</h3>
-            <div><strong>ID:</strong> <span id="currentMeetingId">-</span></div>
-            <div><strong>Status:</strong> <span id="meetingStatus">Active</span></div>
-        </div>
-
-        <div class="section">
-            <h3>👥 Participants (<span id="participantCount">0</span>)</h3>
-            <div id="participants">Click Create or Join to see participants</div>
-        </div>
-
-        <div class="section">
-            <h3>📋 Real-time Logs</h3>
-            <div id="logs">Waiting for connection...</div>
-        </div>
-    </div>
+    <h2>🔧 Backend Test</h2>
+    <div>Your ID: <span id="userId">-</span></div>
+    <br>
+    <button onclick="createMeeting()">Create Meeting</button>
+    <input id="meetingId" placeholder="Meeting ID">
+    <button onclick="joinMeeting()">Join</button>
+    <button onclick="leaveMeeting()">Leave</button>
+    <button onclick="endMeeting()">End</button>
+    <br><br>
+    <div id="status" class="status">Ready</div>
+    <div id="log">Waiting...</div>
 
     <script>
-        const userId = 'user_' + Math.random().toString(36).substr(2, 9);
-        const socketUrl = 'http://localhost:5000';
-        let socket, currentMeetingId = null;
-        let participants = new Set();
-
+        const userId = 'u' + Math.random().toString(36).substr(2,6);
+        const socket = io('http://localhost:5000');
+        let meetingId = null;
+        
         document.getElementById('userId').textContent = userId;
+        const log = msg => {
+            document.getElementById('log').innerHTML += new Date().toLocaleTimeString() + ' ' + msg + '<br>';
+            document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+        };
 
-        // Initialize
-        function init() {
-            document.getElementById('logs').textContent = 'Connecting to Socket.IO...\n';
-            socket = io(socketUrl, { 
-                transports: ['websocket', 'polling'],
-                timeout: 5000 
-            });
+        socket.on('connect', () => log('✅ Connected'));
+        socket.on('connect_error', e => log('❌ ' + e));
+        socket.on('user-joined', id => log('👤 ' + id.slice(0,6) + ' joined'));
+        socket.on('user-left', id => log('👤 ' + id.slice(0,6) + ' left'));
+        socket.on('meeting-ended', () => { log('🔴 Meeting ended'); meetingId = null; });
 
-            socket.on('connect', () => {
-                addLog('✅ Socket connected: ' + socket.id.slice(0, 8));
-                showStatus('Connected to ProjectZ server!', 'success');
+        async function api(endpoint, body) {
+            const res = await fetch(`http://localhost:5000/api/meetings/${endpoint}`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
             });
-
-            socket.on('connect_error', (err) => {
-                addLog('❌ Socket error: ' + err.message);
-                showStatus('Failed to connect to server. Is backend running?', 'error');
-            });
-
-            socket.on('disconnect', () => {
-                addLog('❌ Socket disconnected');
-                showStatus('Disconnected from server', 'error');
-            });
-
-            // Real-time events
-            socket.on('user-joined', (joinedUserId) => {
-                participants.add(joinedUserId);
-                addLog(`👤 ${joinedUserId.slice(0,8)} joined`);
-                updateParticipants();
-                showStatus(`${joinedUserId.slice(0,8)}... joined!`, 'success');
-            });
-
-            socket.on('user-left', (leftUserId) => {
-                participants.delete(leftUserId);
-                addLog(`👤 ${leftUserId.slice(0,8)} left`);
-                updateParticipants();
-            });
-
-            socket.on('meeting-ended', () => {
-                addLog('🔴 Meeting ended by host');
-                showStatus('Meeting ended!', 'error');
-                resetMeeting();
-            });
+            if (!res.ok) throw await res.json();
+            return res.json();
         }
 
-        // API Calls
-        async function apiCall(endpoint, body) {
-            try {
-                const response = await fetch(`${socketUrl}/api/meetings/${endpoint}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body || {})
-                });
-                
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || `HTTP ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                throw new Error('API Error: ' + error.message);
-            }
-        }
-
-        // Meeting Actions - ✅ ALL FIXED
         async function createMeeting() {
             try {
-                showStatus('Creating meeting...', 'info');
-                const result = await apiCall('create');
-                currentMeetingId = result.meetingId;
-                
-                document.getElementById('meetingIdInput').value = currentMeetingId;
-                document.getElementById('currentMeetingId').textContent = currentMeetingId;
-                document.getElementById('meetingInfo').style.display = 'block';
-                
-                // ✅ FIXED: Use currentMeetingId and userId explicitly
-                socket.emit('join-meeting', { meetingId: currentMeetingId, userId: userId });
-                participants.add(userId);
-                
-                addLog(`✅ Created & joined: ${currentMeetingId.slice(0,8)}...`);
-                showStatus(`Meeting created: ${currentMeetingId.slice(0,8)}...`, 'success');
-                updateParticipants();
-            } catch (error) {
-                addLog(`❌ ${error.message}`);
-                showStatus(error.message, 'error');
-            }
+                log('Creating...');
+                const res = await api('create');
+                meetingId = res.meetingId;
+                document.getElementById('meetingId').value = meetingId;
+                socket.emit('join-meeting', {meetingId, userId});
+                log('✅ Created: ' + meetingId.slice(0,8));
+            } catch(e) { log('❌ ' + e.error); }
         }
 
         async function joinMeeting() {
-            const meetingId = document.getElementById('meetingIdInput').value.trim();
-            if (!meetingId) return showStatus('Enter Meeting ID first', 'error');
-
+            meetingId = document.getElementById('meetingId').value;
+            if (!meetingId) return log('❌ Enter ID');
             try {
-                showStatus('Joining meeting...', 'info');
-                await apiCall('join', { meetingId, userId });
-                
-                // ✅ FIXED: Use local meetingId variable explicitly
-                socket.emit('join-meeting', { meetingId: meetingId, userId: userId });
-                currentMeetingId = meetingId;
-                
-                document.getElementById('currentMeetingId').textContent = meetingId;
-                document.getElementById('meetingInfo').style.display = 'block';
-                
-                addLog(`✅ Joined: ${meetingId.slice(0,8)}...`);
-                showStatus('Joined meeting successfully!', 'success');
-            } catch (error) {
-                addLog(`❌ ${error.message}`);
-                showStatus(error.message, 'error');
-            }
+                await api('join', {meetingId, userId});
+                socket.emit('join-meeting', {meetingId, userId});
+                log('✅ Joined: ' + meetingId.slice(0,8));
+            } catch(e) { log('❌ ' + e.error); }
         }
 
         async function leaveMeeting() {
-            if (!currentMeetingId) return showStatus('Not in any meeting', 'error');
-            
+            if (!meetingId) return log('❌ No meeting');
             try {
-                await apiCall('leave', { meetingId: currentMeetingId, userId });
-                socket.emit('leave-meeting', { meetingId: currentMeetingId, userId });
-                
-                addLog(`✅ Left: ${currentMeetingId.slice(0,8)}...`);
-                showStatus('Left meeting', 'success');
-                resetMeeting();
-            } catch (error) {
-                addLog(`❌ ${error.message}`);
-                showStatus(error.message, 'error');
-            }
+                await api('leave', {meetingId, userId});
+                socket.emit('leave-meeting', {meetingId, userId});
+                log('✅ Left');
+                meetingId = null;
+            } catch(e) { log('❌ ' + e.error); }
         }
 
         async function endMeeting() {
-            if (!currentMeetingId) return showStatus('Not in any meeting', 'error');
-            
+            if (!meetingId) return log('❌ No meeting');
             try {
-                await apiCall('end', { meetingId: currentMeetingId });
-                socket.emit('end-meeting', { meetingId: currentMeetingId });
-                
-                addLog(`🔴 Ended: ${currentMeetingId.slice(0,8)}...`);
-                showStatus('Meeting ended!', 'success');
-                resetMeeting();
-            } catch (error) {
-                addLog(`❌ ${error.message}`);
-                showStatus(error.message, 'error');
-            }
+                await api('end', {meetingId});
+                socket.emit('end-meeting', {meetingId});
+                log('✅ Ended');
+                meetingId = null;
+            } catch(e) { log('❌ ' + e.error); }
         }
-
-        // UI Helpers
-        function showStatus(message, type) {
-            const el = document.getElementById('status');
-            el.textContent = message;
-            el.className = `status ${type}`;
-        }
-
-        function addLog(message) {
-            const logs = document.getElementById('logs');
-            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            logs.textContent += `[${time}] ${message}\n`;
-            logs.scrollTop = logs.scrollHeight;
-        }
-
-        function updateParticipants() {
-            const count = document.getElementById('participantCount');
-            const list = document.getElementById('participants');
-            
-            count.textContent = participants.size;
-            
-            if (participants.size === 0) {
-                list.innerHTML = 'No participants yet';
-            } else {
-                list.innerHTML = Array.from(participants)
-                    .map(id => `<span class="participant">👤 ${id.slice(0,8)}...</span>`)
-                    .join('');
-            }
-        }
-
-        function resetMeeting() {
-            currentMeetingId = null;
-            participants.clear();
-            document.getElementById('meetingInfo').style.display = 'none';
-            document.getElementById('meetingIdInput').value = '';
-            updateParticipants();
-        }
-
-        // Start
-        init();
     </script>
 </body>
 </html>
