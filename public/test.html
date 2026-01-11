@@ -3,45 +3,35 @@
 <head>
     <title>ProjectZ Test</title>
     <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
-    <style>
-        body { font-family: monospace; background: #222; color: #0f0; padding: 20px; }
-        #log { background: #000; padding: 15px; height: 400px; overflow: auto; font-size: 14px; }
-        button { padding: 10px 20px; margin: 5px; background: #0066cc; color: white; border: none; cursor: pointer; }
-        button:hover { background: #0080ff; }
-        input { padding: 10px; margin: 5px; width: 250px; }
-        .status { color: #ff0; font-weight: bold; }
-    </style>
 </head>
 <body>
-    <h2>🔧 Backend Test</h2>
-    <div>Your ID: <span id="userId">-</span></div>
-    <br>
-    <button onclick="createMeeting()">Create Meeting</button>
-    <input id="meetingId" placeholder="Meeting ID">
+    <h3>Backend Test</h3>
+    ID: <span id="userId">-</span><br><br>
+    <button onclick="createMeeting()">Create</button>
+    <input id="meetingId" placeholder="Meeting ID" style="width:200px">
     <button onclick="joinMeeting()">Join</button>
     <button onclick="leaveMeeting()">Leave</button>
     <button onclick="endMeeting()">End</button>
     <br><br>
-    <div id="status" class="status">Ready</div>
     <div id="log">Waiting...</div>
 
     <script>
-        const userId = 'u' + Math.random().toString(36).substr(2,6);
+        const userId = 'u'+Math.random().toString(36).substr(2,6);
         const socket = io('http://localhost:5000');
         let meetingId = null;
         
         document.getElementById('userId').textContent = userId;
+        
         const log = msg => {
             document.getElementById('log').innerHTML += new Date().toLocaleTimeString() + ' ' + msg + '<br>';
             document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
         };
-
+        
         socket.on('connect', () => log('✅ Connected'));
-        socket.on('connect_error', e => log('❌ ' + e));
-        socket.on('user-joined', id => log('👤 ' + id.slice(0,6) + ' joined'));
-        socket.on('user-left', id => log('👤 ' + id.slice(0,6) + ' left'));
-        socket.on('meeting-ended', () => { log('🔴 Meeting ended'); meetingId = null; });
-
+        socket.on('user-joined', id => log('👤 '+id.slice(0,6)+' joined'));
+        socket.on('user-left', id => log('👤 '+id.slice(0,6)+' left'));
+        socket.on('meeting-ended', () => { log('🔴 Ended'); meetingId = null; });
+        
         async function api(endpoint, body) {
             const res = await fetch(`http://localhost:5000/api/meetings/${endpoint}`, {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
@@ -49,47 +39,45 @@
             if (!res.ok) throw await res.json();
             return res.json();
         }
-
+        
         async function createMeeting() {
             try {
-                log('Creating...');
                 const res = await api('create');
                 meetingId = res.meetingId;
                 document.getElementById('meetingId').value = meetingId;
                 socket.emit('join-meeting', {meetingId, userId});
-                log('✅ Created: ' + meetingId.slice(0,8));
-            } catch(e) { log('❌ ' + e.error); }
+                log('✅ Created: '+meetingId.slice(0,8));
+            } catch(e) { log('❌ '+e.error); }
         }
-
+        
         async function joinMeeting() {
             meetingId = document.getElementById('meetingId').value;
             if (!meetingId) return log('❌ Enter ID');
             try {
                 await api('join', {meetingId, userId});
                 socket.emit('join-meeting', {meetingId, userId});
-                log('✅ Joined: ' + meetingId.slice(0,8));
-            } catch(e) { log('❌ ' + e.error); }
+                log('✅ Joined: '+meetingId.slice(0,8));
+            } catch(e) { log('❌ '+e.error); }
         }
-
+        
         async function leaveMeeting() {
             if (!meetingId) return log('❌ No meeting');
             try {
                 await api('leave', {meetingId, userId});
                 socket.emit('leave-meeting', {meetingId, userId});
-                log('✅ Left');
-                meetingId = null;
-            } catch(e) { log('❌ ' + e.error); }
+                log('✅ Left'); meetingId = null;
+            } catch(e) { log('❌ '+e.error); }
         }
-
+        
         async function endMeeting() {
             if (!meetingId) return log('❌ No meeting');
             try {
                 await api('end', {meetingId});
                 socket.emit('end-meeting', {meetingId});
-                log('✅ Ended');
-                meetingId = null;
-            } catch(e) { log('❌ ' + e.error); }
+                log('✅ Ended'); meetingId = null;
+            } catch(e) { log('❌ '+e.error); }
         }
     </script>
 </body>
 </html>
+
